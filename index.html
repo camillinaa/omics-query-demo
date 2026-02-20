@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmicsQuery — Conversational AI for OMICS Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:       #050810;
+      --surface:  #090e1a;
+      --border:   rgba(0, 220, 180, 0.12);
+      --teal:     #00dbb4;
+      --teal-dim: rgba(0, 219, 180, 0.18);
+      --blue:     #3b82f6;
+      --amber:    #f59e0b;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --mono:     'DM Mono', monospace;
+      --serif:    'Cormorant Garamond', serif;
+      --sans:     'Space Grotesk', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,219,180,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,219,180,0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NOISE GRAIN ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GLOW ORBS ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+      animation: pulse 8s ease-in-out infinite alternate;
+    }
+    .orb-1 {
+      width: 600px; height: 600px;
+      top: -200px; left: -150px;
+      background: radial-gradient(circle, rgba(0,219,180,0.08) 0%, transparent 70%);
+    }
+    .orb-2 {
+      width: 500px; height: 500px;
+      bottom: -100px; right: -100px;
+      background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%);
+      animation-delay: -4s;
+    }
+    @keyframes pulse {
+      from { opacity: 0.6; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.08); }
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── NAV / TOP BAR ── */
+    nav {
+      position: relative;
+      z-index: 10;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .nav-brand {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--teal);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .nav-badge {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      border-radius: 2px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 5rem 0 3rem;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--teal);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.1s forwards;
+    }
+    .hero-title {
+      font-family: var(--serif);
+      font-size: clamp(3.5rem, 9vw, 5.5rem);
+      font-weight: 300;
+      line-height: 1.0;
+      letter-spacing: -0.01em;
+      color: #fff;
+      opacity: 0;
+      animation: fadeUp 0.9s 0.25s forwards;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--teal);
+    }
+    .hero-subtitle {
+      margin-top: 1.5rem;
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+      opacity: 0;
+      animation: fadeUp 0.9s 0.4s forwards;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 3rem 0;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.55s forwards;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+    .divider-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 8px var(--teal);
+    }
+
+    /* ── VIDEO WRAPPER ── */
+    .video-section {
+      opacity: 0;
+      animation: fadeUp 1s 0.65s forwards;
+    }
+    .video-shell {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      box-shadow:
+        0 0 0 1px rgba(0,219,180,0.06),
+        0 32px 80px rgba(0,0,0,0.6),
+        0 0 60px rgba(0,219,180,0.04) inset;
+    }
+    .video-topbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .topbar-label {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+    }
+    .video-container {
+      padding: 56.25% 0 0;
+      position: relative;
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    /* ── FEATURE CHIPS ── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+      margin: 2.5rem 0 0;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.9s forwards;
+    }
+    .chip {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--teal);
+      border: 1px solid rgba(0,219,180,0.25);
+      background: rgba(0,219,180,0.04);
+      padding: 0.35rem 0.9rem;
+      border-radius: 2px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .chip:hover {
+      background: rgba(0,219,180,0.1);
+      border-color: rgba(0,219,180,0.5);
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .section-num {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--teal);
+      letter-spacing: 0.15em;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+
+    /* ── CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    .card {
+      background: var(--surface);
+      padding: 1.75rem 1.5rem;
+      transition: background 0.25s;
+    }
+    .card:hover { background: rgba(9,14,26,0.5); }
+    .card-icon {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .card-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--teal);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .card-body {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── PIPELINE ── */
+    .pipeline {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 2rem;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .pipe-step {
+      flex: 1;
+      padding: 1.25rem 1rem;
+      background: var(--surface);
+      text-align: center;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .pipe-step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--teal);
+      font-size: 0.8rem;
+      z-index: 2;
+      font-family: var(--mono);
+    }
+    .pipe-step:not(:last-child) {
+      border-right: 1px solid var(--border);
+    }
+    .pipe-step:hover { background: rgba(0,219,180,0.04); }
+    .pipe-step-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--teal);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .pipe-step-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ── TERMINAL / CODE BLOCK ── */
+    .terminal {
+      background: #060b14;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2rem;
+      font-family: var(--mono);
+    }
+    .terminal-bar {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .term-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .terminal-body {
+      padding: 1.5rem;
+      font-size: 0.78rem;
+      line-height: 1.9;
+    }
+    .t-prompt { color: var(--teal); }
+    .t-cmd    { color: #e2e8f0; }
+    .t-out    { color: var(--muted); }
+    .t-hl     { color: var(--amber); }
+    .t-cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: var(--teal);
+      vertical-align: text-bottom;
+      animation: blink 1.2s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── STATS ROW ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      margin-top: 2rem;
+      overflow: hidden;
+    }
+    .stat {
+      padding: 2rem 1.5rem;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat:last-child { border-right: none; }
+    .stat-val {
+      font-family: var(--serif);
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: #fff;
+      line-height: 1;
+    }
+    .stat-val span { color: var(--teal); }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+
+    /* ── SECTION BLOCKS ── */
+    .section {
+      padding: 4rem 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    footer a { color: var(--teal); text-decoration: none; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .pipeline { flex-direction: column; }
+      .pipe-step:not(:last-child)::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -0.7rem; transform: translateX(-50%); }
+      .pipe-step:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border); }
+      .stats { grid-template-columns: 1fr; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat:last-child { border-bottom: none; }
+      nav { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">OmicsQuery</div>
+  <div class="nav-badge">v0.1 · poster demo</div>
+</nav>
+
+<div class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-eyebrow">Conversational AI · Multi-Omics Analysis</p>
+    <h1 class="hero-title">Ask your<br/><em>pipelines</em><br/>anything.</h1>
+    <p class="hero-subtitle">
+      OmicsQuery wraps bioinformatics pipelines in a natural-language interface — no code required at query time.
+    </p>
+  </section>
+
+  <div class="divider"><div class="divider-dot"></div></div>
+
+  <!-- VIDEO -->
+  <div class="video-section">
+    <div class="video-shell">
+      <div class="video-topbar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="topbar-label">omics-query · live demo</span>
+      </div>
+      <div class="video-container">
+        <iframe
+          src="https://player.vimeo.com/video/1166760623?badge=0&autopause=0&player_id=0&app_id=58479&muted=1&autoplay=1&loop=1"
+          allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          title="OmicsQuery Demo">
+        </iframe>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip">bulk RNA-seq</span>
+    </div>
+  </div>
+
+  <!-- SECTION: PROBLEM -->
+  <section class="section" id="s1">
+    <div class="section-header">
+      <span class="section-num">01 —</span>
+      <h2 class="section-title">The bottleneck</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">⚗️</div>
+        <div class="card-label">Fragmented tooling</div>
+        <div class="card-body">DESeq2, enrichR, Seurat, GATK — each with its own file format, nomenclatures, and learning curve.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📄</div>
+        <div class="card-label">Static reports</div>
+        <div class="card-body">HTML/PDF outputs are inspectable but not queryable. Follow-up questions require new scripts.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🧑‍💻</div>
+        <div class="card-label">Bioinformatics bottleneck</div>
+        <div class="card-body">Biologists wait on bioinformaticians for ad-hoc queries that could be answered in seconds.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: SOLUTION -->
+  <section class="section" id="s2">
+    <div class="section-header">
+      <span class="section-num">02 —</span>
+      <h2 class="section-title">Architecture</h2>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-step-label">Data layer</div>
+        <div class="pipe-step-sub">nf-core outputs<br/>Count matrices / TXTs / Excels </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-step-label">Tool layer</div>
+        <div class="pipe-step-sub">Python functions<br/>and SQL queries<br/>wrapped as tools</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-step-label">Agent</div>
+        <div class="pipe-step-sub">LLM + ReAct<br/>reasoning loop</div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-step-label">Interface</div>
+        <div class="pipe-step-sub">Chat UI<br/>+ structured output</div>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="term-dot" style="background:#ff5f57"></div>
+        <div class="term-dot" style="background:#febc2e"></div>
+        <div class="term-dot" style="background:#28c840"></div>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">user &gt;&nbsp;</span><span class="t-cmd">Which pathways are upregulated in cluster 3 vs. cluster 1?</span></div>
+        <div><span class="t-prompt">agent &gt;&nbsp;</span><span class="t-out">→ calling <span class="t-hl">run_deg(cluster_a=3, cluster_b=1)</span></span></div>
+        <div><span class="t-prompt">       &nbsp;</span><span class="t-out">→ calling <span class="t-hl">gsea(gene_list, db='hallmark')</span></span></div>
+        <div><span class="t-prompt">       &nbsp;</span><span class="t-out">→ <span class="t-hl">OXIDATIVE_PHOSPHORYLATION</span> (NES=2.31, p=0.001)</span></div>
+        <div><span class="t-prompt">       &nbsp;</span><span class="t-out">→ <span class="t-hl">MYC_TARGETS_V1</span> (NES=1.98, p=0.003)</span></div>
+        <div style="margin-top:0.5rem"><span class="t-prompt">user &gt;&nbsp;</span><span class="t-cursor"></span></div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<footer>
+  <script src="https://player.vimeo.com/api/player.js"></script>
+  Built with LangChain · Gemini · Python · nf-core &nbsp;·&nbsp;
+</footer>
+
+<script>
+  // Intersection observer for scroll-triggered reveals
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
